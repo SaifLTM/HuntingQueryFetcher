@@ -1,0 +1,2 @@
+# Dependencies for scripts/extract_hunting_queries.py (Python 3.11+) 
+python-frontmatter>=1.1.0,<2.0
