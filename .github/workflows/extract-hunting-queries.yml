@@ -1,0 +1,63 @@
+name: Extract Defender XDR Advanced Hunting queries
+
+# Extracts Advanced Hunting (KQL) queries from the public
+# MicrosoftDocs/defender-docs repository into a JSON file and uploads it
+# as a downloadable workflow artifact. No GitHub Pages, no deployments.
+
+on:
+  # Run manually from the Actions tab.
+  workflow_dispatch:
+
+  # Run weekly: every Monday at 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1"
+
+  # Run when the extractor, its dependencies, or this workflow change.
+  push:
+    paths:
+      - "scripts/extract_hunting_queries.py"
+      - "requirements.txt"
+      - ".github/workflows/extract-hunting-queries.yml"
+  pull_request:
+    paths:
+      - "scripts/extract_hunting_queries.py"
+      - "requirements.txt"
+      - ".github/workflows/extract-hunting-queries.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  extract-queries:
+    name: Extract queries and upload artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      - name: Extract Advanced Hunting queries to HTML
+        run: python scripts/extract_hunting_queries.py --output output/advanced-hunting-queries.html
+
+      - name: Show extraction summary
+        run: |
+          echo "Output file:"
+          ls -lh output/advanced-hunting-queries.html
+          echo "Query blocks in page:"
+          grep -c '<pre><code>' output/advanced-hunting-queries.html || true
+
+      - name: Upload queries HTML as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: defender-xdr-advanced-hunting-queries
+          path: output/advanced-hunting-queries.html
+          retention-days: 30
+          if-no-files-found: error
